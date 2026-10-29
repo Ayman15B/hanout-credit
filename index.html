@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173d32">
+  <meta name="description" content="دفتر الكريدي الرقمي ديال الحانوت">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>Hanout Credit — دفتر الحانوت</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brandmark">ح</div>
+    <div class="brandtext"><strong>Hanout Credit</strong><span>دفتر الكريدي ديال الحانوت</span></div>
+    <button id="lockBtn" class="icon-btn" aria-label="قفل التطبيق" title="قفل التطبيق">🔒</button>
+  </header>
+
+  <main id="app" class="container">
+    <section class="hero">
+      <div class="hero-top"><span>السلام عليكم 👋</span><span id="todayLabel"></span></div>
+      <p class="muted-light">مجموع الفلوس اللي باقي خاصك تجمعها</p>
+      <div class="total" id="totalDebt">0,00 DH</div>
+      <div class="hero-stats">
+        <div><span id="customerCount">0</span><small>الزبناء</small></div>
+        <div><span id="owingCount">0</span><small>عندهم كريدي</small></div>
+        <div><span id="todayPayments">0 DH</span><small>خلاص اليوم</small></div>
+      </div>
+    </section>
+
+    <section class="quick-actions">
+      <button class="primary-btn" id="addCustomerOpen">＋ زيد زبون</button>
+      <button class="secondary-btn" id="addTransactionOpen">＋ زيد كريدي / خلاص</button>
+    </section>
+
+    <section class="section-head">
+      <h2>الزبناء</h2>
+      <span class="small-muted">قلب على الاسم ولا رقم الهاتف</span>
+    </section>
+    <label class="searchbox"><span>⌕</span><input id="searchInput" type="search" placeholder="قلب على شي زبون..." autocomplete="off"></label>
+    <div class="filters" role="group" aria-label="تصفية الزبناء">
+      <button class="filter active" data-filter="all">كاعشي</button>
+      <button class="filter" data-filter="owing">باقي عليهم</button>
+      <button class="filter" data-filter="settled">صفّاو الحساب</button>
+    </div>
+    <section id="customerList" class="customer-list" aria-live="polite"></section>
+
+    <section class="tools-panel">
+      <h2>البيانات والنسخ الاحتياطي</h2>
+      <p>البيانات كتتحفظ فهاد التليفون. دير نسخة احتياطية بانتظام باش ما تضيعش الحسابات.</p>
+      <div class="tool-buttons">
+        <button class="secondary-btn" id="exportBtn">تصدير نسخة JSON</button>
+        <label class="secondary-btn file-label">استرجاع نسخة<input type="file" id="importFile" accept=".json,application/json" hidden></label>
+      </div>
+      <p class="tiny-note">مهم: ما تمسحش بيانات المتصفح قبل ما تدير نسخة احتياطية. المزامنة بين الأجهزة مازال ما مفعّلاش فهاد النسخة الأولى.</p>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="homeNav"><span>⌂</span>الرئيسية</button>
+    <button class="nav-item" id="historyNav"><span>◷</span>آخر العمليات</button>
+    <button class="nav-item" id="backupNav"><span>▣</span>النسخ الاحتياطي</button>
+  </nav>
+
+  <div class="modal-backdrop hidden" id="customerModal">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
+      <div class="modal-head"><h2 id="customerModalTitle">زيد زبون جديد</h2><button class="close-btn" data-close="customerModal">×</button></div>
+      <form id="customerForm">
+        <label>الاسم الكامل <input id="customerName" required maxlength="80" placeholder="مثلاً: محمد"></label>
+        <label>رقم الهاتف <span class="optional">(اختياري)</span><input id="customerPhone" inputmode="tel" maxlength="20" placeholder="06..."></label>
+        <label>ملاحظات <span class="optional">(اختياري)</span><textarea id="customerNotes" maxlength="300" placeholder="مثلاً: جار الحانوت"></textarea></label>
+        <button class="primary-btn full" type="submit">حفظ الزبون</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="transactionModal">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="transactionModalTitle">
+      <div class="modal-head"><h2 id="transactionModalTitle">عملية جديدة</h2><button class="close-btn" data-close="transactionModal">×</button></div>
+      <form id="transactionForm">
+        <label>الزبون <select id="transactionCustomer" required></select></label>
+        <div class="type-switch">
+          <label><input type="radio" name="transactionType" value="credit" checked><span>زاد خدا بالكريدي</span></label>
+          <label><input type="radio" name="transactionType" value="payment"><span>خلّص</span></label>
+        </div>
+        <label>المبلغ بالدرهم <input id="transactionAmount" required type="number" min="0.01" max="10000000" step="0.01" inputmode="decimal" placeholder="مثلاً: 50"></label>
+        <label>ملاحظة <span class="optional">(اختياري)</span><input id="transactionNote" maxlength="200" placeholder="مثلاً: مواد غذائية"></label>
+        <div id="transactionWarning" class="inline-warning hidden"></div>
+        <button class="primary-btn full" type="submit">سجّل العملية</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="customerDetailModal">
+    <section class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailName">
+      <div class="modal-head"><div><h2 id="detailName">الزبون</h2><p id="detailPhone" class="small-muted"></p></div><button class="close-btn" data-close="customerDetailModal">×</button></div>
+      <div class="detail-balance"><span>الباقي عليه</span><strong id="detailBalance">0,00 DH</strong></div>
+      <div class="detail-actions"><button class="primary-btn" id="detailCreditBtn">＋ كريدي</button><button class="secondary-btn" id="detailPaymentBtn">＋ خلاص</button></div>
+      <div class="section-head"><h3>سجل الحساب</h3></div>
+      <div id="detailLedger" class="ledger"></div>
+      <div class="detail-footer"><button class="secondary-btn" id="editCustomerBtn">تعديل المعلومات</button><button class="danger-btn" id="deleteCustomerBtn">حذف الزبون</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="historyModal">
+    <section class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+      <div class="modal-head"><h2 id="historyTitle">آخر العمليات</h2><button class="close-btn" data-close="historyModal">×</button></div>
+      <div id="allHistory" class="ledger"></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="pinModal">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+      <div class="modal-head"><h2 id="pinTitle">حماية التطبيق</h2><button class="close-btn" data-close="pinModal">×</button></div>
+      <p class="small-muted">اختار رمز PIN من 4 حتى 8 أرقام. هاد القفل كيساعد يحمي الواجهة، ولكن ماشي تشفير كامل لبيانات الجهاز.</p>
+      <form id="pinForm"><label>رمز PIN<input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" required placeholder="••••"></label><button class="primary-btn full" type="submit">حفظ الرمز</button></form>
+      <button class="text-btn" id="disablePinBtn">تعطيل رمز PIN</button>
+    </section>
+  </div>
+
+  <div class="toast hidden" id="toast" role="status"></div>
+  <div class="lock-screen hidden" id="lockScreen"><div class="lock-card"><div class="brandmark large">ح</div><h2>Hanout Credit</h2><p>دخل رمز PIN باش تكمل</p><form id="unlockForm"><input id="unlockPin" type="password" inputmode="numeric" maxlength="8" required placeholder="رمز PIN"><button class="primary-btn full">دخول</button></form><p id="unlockError" class="error-text"></p></div></div>
+  <script src="app.js"></script>
+</body>
+</html>
